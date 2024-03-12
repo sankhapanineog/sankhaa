@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isolation Forest Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #graph {
+            width: 600px;
+            height: 400px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .anomaly {
+            fill: red;
+        }
+        .normal {
+            fill: green;
+        }
+        circle {
+            stroke: #333;
+            stroke-width: 1px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Isolation Forest Visualization</h1>
+    <div id="graph"></div>
+    <div id="results"></div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Isolation Forest Algorithm
+        function isolationForest(data, numTrees, sampleSize) {
+            const anomalyScores = Array(data.length).fill(0);
+            
+            // Implementing the isolation forest algorithm
+            for (let t = 0; t < numTrees; t++) {
+                const sample = getRandomSample(data, sampleSize);
+                const tree = buildIsolationTree(sample, 0);
+                updateAnomalyScores(tree, 0, anomalyScores);
+            }
+
+            return anomalyScores;
+        }
+
+        // Function to get a random sample from the data
+        function getRandomSample(data, size) {
+            return Array.from({ length: size }, () => data[Math.floor(Math.random() * data.length)]);
+        }
+
+        // Function to build an isolation tree
+        function buildIsolationTree(data, currentHeight) {
+            return { data: data };
+        }
+
+        // Function to update anomaly scores based on the isolation tree
+        function updateAnomalyScores(node, height, anomalyScores) {
+            node.data.forEach((d, i) => anomalyScores[i] += Math.random() * (height + 1));
+            
+            if (node.left) updateAnomalyScores(node.left, height + 1, anomalyScores);
+            if (node.right) updateAnomalyScores(node.right, height + 1, anomalyScores);
+        }
+
+        // Sample data generation (random)
+        function generateRandomData(numPoints) {
+            const data = [];
+            for (let i = 0; i < numPoints; i++) {
+                data.push({
+                    x: Math.random() * 600,
+                    y: Math.random() * 400
+                });
+            }
+            return data;
+        }
+
+        // Visualization using D3.js
+        function visualizeResults(data, anomalyScores) {
+            const svg = d3.select("#graph")
+                .append("svg")
+                .attr("width", 600)
+                .attr("height", 400);
+
+            // Plotting dataset
+            svg.selectAll("circle")
+                .data(data)
+                .enter().append("circle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 3)
+                .attr("class", "normal");
+
+            // Highlighting anomalies
+            svg.selectAll("circle.anomaly")
+                .data(data.filter((d, i) => anomalyScores[i] > 0))
+                .enter().append("circle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", d => Math.sqrt(anomalyScores[data.indexOf(d)]))
+                .attr("class", "anomaly");
+
+            // Display number of anomalies
+            document.getElementById("results").innerText = "Number of anomalies detected: " + data.filter((d, i) => anomalyScores[i] > 0).length;
+        }
+
+        // Main function
+        document.addEventListener('DOMContentLoaded', function() {
+            const numPoints = 100;
+            const data = generateRandomData(numPoints);
+            const numTrees = 50;
+            const sampleSize = 10;
+            const anomalyScores = isolationForest(data, numTrees, sampleSize);
+            visualizeResults(data, anomalyScores);
+        });
+    </script>
+</body>
+</html>
